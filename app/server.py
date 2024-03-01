@@ -13,6 +13,7 @@ import toml
 # custom imports
 from app.api.user import router as user_router
 from app.api.health import router as health_router
+from app.api.category import router as category_router
 from app.services.auth import AuthBearer
 from app.redis import get_redis
 from app.middlewares import RequestLogger, RequestID
@@ -75,6 +76,7 @@ def init_app(use_rate_limiter:bool=False) -> FastAPI:
 
 def add_api_routers(app:FastAPI, add_static_files: bool = False) -> None:
     app.include_router(user_router)
+    app.include_router(category_router, tags=["Category"], dependencies=[Depends(AuthBearer())])
     app.include_router(health_router, prefix="/v1/public/health", tags=["Health, Public"])
     app.include_router(health_router, prefix="/v1/health", tags=["Health, Bearer"], dependencies=[Depends(AuthBearer())])
 
