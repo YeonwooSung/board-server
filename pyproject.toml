@@ -16,6 +16,8 @@ httpx = "^0.26.0"
 pyjwt = "^2.8.0"
 httptools = "^0.6.1"
 passlib = "^1.7.4"
+slowapi = "^0.1.9"
+toml = "^0.10.2"
 
 
 [build-system]
