@@ -31,7 +31,6 @@ async def create_user(payload: UserSchema, request: Request, db_session: AsyncSe
 async def get_token_for_user(user: UserLogin, request: Request, db_session: AsyncSession = Depends(get_db)):
     _user: User = await User.find(db_session, [User.email == user.email])
 
-    # TODO: out exception handling to external module
     if not _user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if not _user.check_password(user.password):

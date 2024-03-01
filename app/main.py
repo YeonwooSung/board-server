@@ -1,32 +1,62 @@
-from contextlib import asynccontextmanager
-
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import PlainTextResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 import sys
+import traceback
 
 # Add the parent directory to the sys.path
 sys.path.append("..")
 
-from app.utils.logging import AppLogger
-from app.api.user import router as user_router
-from app.api.health import router as health_router
-from app.redis import get_redis
-from app.services.auth import AuthBearer
+# custom imports
+from app.server import add_api_routers, init_app
+from app.utils.logging import Logger
+from app.utils.gc_tuning import gc_optimization_on_startup
 
-logger = AppLogger.__call__().get_logger()
+# get the singleton logger
+logger = Logger()
 
+app = init_app()
+add_api_routers(app)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Load the redis connection
-    app.state.redis = await get_redis()
-    yield
-    # close redis connection and release the resources
-    app.state.redis.close()
+# start up event
+@app.on_event("startup")
+async def startup_event():
+    # init logger before app starts up
+    logger.get_logger()
 
+    # gc optimization
+    gc_optimization_on_startup(debug=False, disable_gc=False)
 
-app = FastAPI(title="Stuff And Nonsense API", version="0.6", lifespan=lifespan)
+# shutdown event
+@app.on_event("shutdown")
+async def shutdown_event():
+    pass
 
-app.include_router(user_router)
+#
+# exception handling
+#
 
-app.include_router(health_router, prefix="/v1/public/health", tags=["Health, Public"])
-app.include_router(health_router, prefix="/v1/health", tags=["Health, Bearer"], dependencies=[Depends(AuthBearer())])
+@app.exception_handler(Exception)
+async def exception_handler(request, exc):
+    # log the traceback and return 500
+    logger.log_error(f"method={request.method} | {request.url} | {request.state.request_id} | 500 | details: {traceback.format_exc()}")
+    return {"detail": "Internal Server Error"}, 500
+
+@app.exception_handler(StarletteHTTPException)
+async def starlette_http_exception_handler(request, exc):
+    await log_http_exception(request, exc)
+    return {"detail": exc.detail}, exc.status_code
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    await log_http_exception(request, exc)
+    return {"detail": exc.detail}, exc.status_code
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    await log_http_exception(request, exc)
+    return PlainTextResponse(str(exc), status_code=400)
+
+async def log_http_exception(request, exc):
+    logger.log_warning(f"method={request.method} | {request.url} | {request.state.request_id} | {exc.status_code} | details: {exc.detail}")

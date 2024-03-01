@@ -5,9 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.stuff import Stuff
 from app.schemas.stuff import StuffResponse, StuffSchema
-from app.utils.logging import AppLogger
+from app.utils.logging import Logger
 
-logger = AppLogger.__call__().get_logger()
+
+# get logger
+logger = Logger()
 
 router = APIRouter(prefix="/v1/stuff")
 
