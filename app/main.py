@@ -60,3 +60,9 @@ async def validation_exception_handler(request, exc):
 
 async def log_http_exception(request, exc):
     logger.log_warning(f"method={request.method} | {request.url} | {request.state.request_id} | {exc.status_code} | details: {exc.detail}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
