@@ -20,7 +20,7 @@ async def create_user(payload: UserSchema, request: Request, db_session: AsyncSe
     return _user
 
 
-@router.post("/token", status_code=status.HTTP_201_CREATED, response_model=TokenResponse)
+@router.post("/signin", status_code=status.HTTP_201_CREATED, response_model=TokenResponse)
 async def get_token_for_user(user: UserLogin, request: Request, db_session: AsyncSession = Depends(get_db)):
     _user: User = await User.find(db_session, [User.email == user.email])
 
@@ -33,3 +33,15 @@ async def get_token_for_user(user: UserLogin, request: Request, db_session: Asyn
     # TODO: add refresh token
     _token = await create_access_token(_user, request)
     return {"access_token": _token, "token_type": "bearer"}
+
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(user_id: int, db_session: AsyncSession = Depends(get_db)):
+    _user: User = await User.find(db_session, [User.id == user_id])
+    return _user
+
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(request: Request):
+    # refresh token
+    pass

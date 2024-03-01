@@ -10,6 +10,8 @@ from sqlalchemy.orm import mapped_column, Mapped
 
 from app.models.base import Base
 
+
+# password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 

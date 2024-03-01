@@ -35,6 +35,7 @@ class AuthBearer(HTTPBearer):
 
 async def create_access_token(user: User, request: Request):
     _payload = {
+        "id": user.id,
         "email": user.email,
         "expiry": time.time() + global_settings.jwt_expire,
         "platform": request.headers.get("User-Agent"),
@@ -42,5 +43,18 @@ async def create_access_token(user: User, request: Request):
     _token = jwt.encode(_payload, str(user.password), algorithm=global_settings.jwt_algorithm)
 
     _bool = await request.app.state.redis.set(_token, str(_payload), ex=global_settings.jwt_expire)
+    if _bool:
+        return _token
+
+
+async def create_refresh_token(user: User, request: Request):
+    _payload = {
+        "email": user.email,
+        "expiry": time.time() + global_settings.jwt_refresh_expire,
+        "platform": request.headers.get("User-Agent"),
+    }
+    _token = jwt.encode(_payload, str(user.password), algorithm=global_settings.jwt_algorithm)
+
+    _bool = await request.app.state.redis.set(_token, str(_payload), ex=global_settings.jwt_refresh_expire)
     if _bool:
         return _token
