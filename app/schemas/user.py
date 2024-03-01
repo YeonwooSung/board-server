@@ -12,6 +12,7 @@ class UserSchema(BaseModel):
     first_name: str = Field(title="User’s first name", description="User’s first name")
     last_name: str = Field(title="User’s last name", description="User’s last name")
     password: str = Field(title="User’s password", description="User’s password")
+    nickname: str = Field(title="User’s nickname", description="User’s nickname")
 
 
 class UserResponse(BaseModel):
@@ -19,7 +20,6 @@ class UserResponse(BaseModel):
     email: EmailStr = Field(title="User’s email", description="User’s email")
     first_name: str = Field(title="User’s first name", description="User’s first name")
     last_name: str = Field(title="User’s last name", description="User’s last name")
-    access_token: str = Field(title="User’s token", description="User’s token")
 
 
 class TokenResponse(BaseModel):
@@ -38,5 +38,9 @@ class RefreshTokenSchema(BaseModel):
     refresh_token: str = Field(title="User’s refresh token", description="User’s refresh token")
 
 
-def create_token_response(token: str, refresh_token: str) -> TokenResponse:
-    return TokenResponse(access_token=token, token_type="bearer", refresh_token=refresh_token)
+def create_token_response(token: str, refresh_token: str) -> dict:
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "refresh_token": refresh_token,
+    }
