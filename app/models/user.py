@@ -20,6 +20,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     first_name: Mapped[str] = mapped_column(String, nullable=False)
     last_name: Mapped[str] = mapped_column(String, nullable=False)
+    nickname: Mapped[str] = mapped_column(String, nullable=False)
     _password: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
 
     @property

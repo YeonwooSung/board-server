@@ -12,6 +12,7 @@ from app.models.user import User
 async def verify_jwt(request: Request, token: str) -> bool:
     _payload = await request.app.state.redis.get(token)
     if _payload:
+        request.state.jwt_payload = _payload
         return True
     else:
         return False
@@ -37,6 +38,7 @@ async def create_access_token(user: User, request: Request):
     _payload = {
         "id": user.id,
         "email": user.email,
+        "nickname": user.nickname,
         "expiry": time.time() + global_settings.jwt_expire,
         "platform": request.headers.get("User-Agent"),
     }
@@ -50,7 +52,7 @@ async def create_access_token(user: User, request: Request):
 async def create_refresh_token(user: User, access_token: str, request: Request):
     _payload = {
         "access_token": access_token,
-        "email": user.email,
+        "id": user.id,
         "expiry": time.time() + global_settings.jwt_refresh_expire,
         "platform": request.headers.get("User-Agent"),
     }
@@ -62,13 +64,23 @@ async def create_refresh_token(user: User, access_token: str, request: Request):
         return _token
 
 
-async def get_user_info_by_refresh_token(refresh_token: str, request: Request) -> str:
+async def get_cached_data_by_refresh_token(refresh_token: str, request: Request) -> tuple:
     _data = await request.app.state.redis.get(refresh_token)
     if not _data:
         raise HTTPException(status_code=403, detail="Invalid refresh token or expired token.")
     # decode the data
     _decoded = jwt.decode(_data, global_settings.jwt_refresh_key, algorithms=[global_settings.jwt_algorithm])
-    email = _decoded.get("email", None)
-    if not email:
+    _id = _decoded.get("id", None)
+    access_token = _decoded.get("access_token", None)
+    if not _id or not access_token:
         raise HTTPException(status_code=403, detail="Invalid refresh token or expired token.")
-    return email
+    return _id, access_token
+
+
+async def invalidate_access_token(token: str, request: Request):
+    await request.app.state.redis.delete(token)
+    return True
+
+async def invalidate_refresh_token(token: str, request: Request):
+    await request.app.state.redis.delete(token)
+    return True
