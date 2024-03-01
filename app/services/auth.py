@@ -47,14 +47,28 @@ async def create_access_token(user: User, request: Request):
         return _token
 
 
-async def create_refresh_token(user: User, request: Request):
+async def create_refresh_token(user: User, access_token: str, request: Request):
     _payload = {
+        "access_token": access_token,
         "email": user.email,
         "expiry": time.time() + global_settings.jwt_refresh_expire,
         "platform": request.headers.get("User-Agent"),
     }
-    _token = jwt.encode(_payload, str(user.password), algorithm=global_settings.jwt_algorithm)
+    _refresh_token_key = global_settings.jwt_refresh_key
+    _token = jwt.encode(_payload, _refresh_token_key, algorithm=global_settings.jwt_algorithm)
 
     _bool = await request.app.state.redis.set(_token, str(_payload), ex=global_settings.jwt_refresh_expire)
     if _bool:
         return _token
+
+
+async def get_user_info_by_refresh_token(refresh_token: str, request: Request) -> str:
+    _data = await request.app.state.redis.get(refresh_token)
+    if not _data:
+        raise HTTPException(status_code=403, detail="Invalid refresh token or expired token.")
+    # decode the data
+    _decoded = jwt.decode(_data, global_settings.jwt_refresh_key, algorithms=[global_settings.jwt_algorithm])
+    email = _decoded.get("email", None)
+    if not email:
+        raise HTTPException(status_code=403, detail="Invalid refresh token or expired token.")
+    return email

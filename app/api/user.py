@@ -4,8 +4,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # custom imports
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserSchema, UserResponse, UserLogin, TokenResponse
-from app.services.auth import create_access_token
+from app.schemas.user import (
+    UserSchema,
+    UserResponse,
+    UserLogin,
+    TokenResponse,
+    RefreshTokenSchema,
+    create_token_response
+)
+from app.services.auth import create_access_token, create_refresh_token, get_user_info_by_refresh_token
 
 
 router = APIRouter(prefix="/v1/user")
@@ -15,8 +22,8 @@ async def create_user(payload: UserSchema, request: Request, db_session: AsyncSe
     _user: User = User(**payload.model_dump())
     await _user.save(db_session)
 
-    # TODO: add refresh token
-    _user.access_token = await create_access_token(_user, request)
+    # _user.access_token = await create_access_token(_user, request)
+    # _user.refresh_token = await create_refresh_token(_user, _user.access_token, request)
     return _user
 
 
@@ -30,18 +37,20 @@ async def get_token_for_user(user: UserLogin, request: Request, db_session: Asyn
     if not _user.check_password(user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Password is incorrect")
 
-    # TODO: add refresh token
     _token = await create_access_token(_user, request)
-    return {"access_token": _token, "token_type": "bearer"}
+    _refresh_token = await create_refresh_token(_user, _token, request)
+    return create_token_response(_token, _refresh_token)
 
 
-@router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, db_session: AsyncSession = Depends(get_db)):
-    _user: User = await User.find(db_session, [User.id == user_id])
-    return _user
-
-
-@router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(request: Request):
+@router.post("/token/refresh", response_model=TokenResponse)
+async def refresh_token(payload: RefreshTokenSchema, request: Request, db_session: AsyncSession = Depends(get_db)):
     # refresh token
-    pass
+    refresh_token = payload.refresh_token
+    user_email = await get_user_info_by_refresh_token(refresh_token, request)
+    _user = await User.find(db_session, [User.email == user_email])
+
+    # create new access token
+    _token = await create_access_token(_user, request)
+    # create new refresh token
+    _refresh_token = await create_refresh_token(_user, _token, request)
+    return create_token_response(_token, _refresh_token)

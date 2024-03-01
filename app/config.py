@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     redis_url: RedisDsn = os.getenv("REDIS_URL")
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM")
     jwt_expire: int = os.getenv("JWT_EXPIRE")
+    jwt_refresh_key: str = os.getenv("JWT_REFRESH_KEY")
 
 
 settings = Settings()

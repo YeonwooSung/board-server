@@ -25,9 +25,18 @@ class UserResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str = Field(title="User’s access token", description="User’s access token")
     token_type: str = Field(title="User’s token type", description="User’s token type")
+    refresh_token: str = Field(title="User’s refresh token", description="User’s refresh token")
 
 
 class UserLogin(BaseModel):
     model_config = config
     email: EmailStr = Field(title="User’s email", description="User’s email")
     password: str = Field(title="User’s password", description="User’s password")
+
+
+class RefreshTokenSchema(BaseModel):
+    refresh_token: str = Field(title="User’s refresh token", description="User’s refresh token")
+
+
+def create_token_response(token: str, refresh_token: str) -> TokenResponse:
+    return TokenResponse(access_token=token, token_type="bearer", refresh_token=refresh_token)
