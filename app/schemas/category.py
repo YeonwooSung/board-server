@@ -18,3 +18,7 @@ class CategoryResponse(BaseModel):
         title="Category Name",
         description="Name of the Category",
     )
+    author_id: int = Field(
+        title="Author Id",
+        description="Id of the user who created the category",
+    )
