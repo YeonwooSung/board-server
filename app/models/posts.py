@@ -13,6 +13,7 @@ class Posts(Base):
     title = mapped_column(String, nullable=False)
     content = mapped_column(String, nullable=False)
     author_id = mapped_column(Integer, nullable=False)
+    category_id = mapped_column(Integer, nullable=False)
 
     @classmethod
     async def find_by_title(cls, db_session: AsyncSession, title: str):

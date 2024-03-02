@@ -16,6 +16,10 @@ class PostsSchema(BaseModel):
         title="",
         description="",
     )
+    category_id : int = Field(
+        title="",
+        description="",
+    )
 
 
 class PostsResponse(BaseModel):
@@ -32,6 +36,10 @@ class PostsResponse(BaseModel):
         description="",
     )
     author_id: int = Field(
+        title="",
+        description="",
+    )
+    category_id: int = Field(
         title="",
         description="",
     )
