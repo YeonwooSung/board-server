@@ -17,6 +17,8 @@ from app.api.category import router as category_router
 from app.services.auth import AuthBearer
 from app.redis import get_redis
 from app.middlewares import RequestLogger, RequestID
+from app.utils.logging import Logger
+from app.utils.gc_tuning import gc_optimization_on_startup
 
 
 @cache
@@ -47,6 +49,11 @@ def get_version_from_pyproject_toml() -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # init logger before app starts up
+    Logger().get_logger()
+    # gc optimization
+    gc_optimization_on_startup(debug=False, disable_gc=False)
+
     # Load the redis connection
     app.state.redis = await get_redis()
     yield

@@ -11,7 +11,6 @@ sys.path.append("..")
 # custom imports
 from app.server import add_api_routers, init_app
 from app.utils.logging import Logger
-from app.utils.gc_tuning import gc_optimization_on_startup
 
 # get the singleton logger
 logger = Logger()
@@ -19,19 +18,6 @@ logger = Logger()
 app = init_app()
 add_api_routers(app)
 
-# start up event
-@app.on_event("startup")
-async def startup_event():
-    # init logger before app starts up
-    logger.get_logger()
-
-    # gc optimization
-    gc_optimization_on_startup(debug=False, disable_gc=False)
-
-# shutdown event
-@app.on_event("shutdown")
-async def shutdown_event():
-    pass
 
 #
 # exception handling
